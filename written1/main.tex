@@ -313,6 +313,27 @@
             state set, action sets, state transition, and reward function.
 
             \begin{solution}
+                The above problem is a deterministic MDP.
+
+                Let us define the state space as: $\mathcal{S} = \{L, Q\}$,
+                where $L$ indicates laughter and $Q$ indicates quiet.
+
+                If we let $I$ indicate burning incense and $O$ as playing the organ, the action space is $\mathcal{A} = \{I, O\}$
+
+                The state transition and reward function are shown in a tabular form below.
+
+                \begin{center}
+                    \begin{tabular}{|cc|cc|}
+                        \hline
+                        State & Action & New State & Reward \\
+                        \hline
+                        L     & I      & L         & -1     \\
+                        L     & O      & Q         & 1      \\
+                        Q     & I      & Q         & 1      \\
+                        Q     & O      & L         & -1     \\
+                        \hline
+                    \end{tabular}
+                \end{center}
 
 
             \end{solution}
@@ -321,14 +342,53 @@
 
             \begin{solution}
 
+                \begin{enumerate}
+                    \item \textbf{Initialization}
+
+                    Initial policy: $\pi(L) = I, \pi(Q) = I$
+
+                    Initial value: $V(L) = 0,V(Q) = 0$
+
+                    \item \textbf{Policy Evaluation}
+                    \begin{align*}
+                        V(L) &= -1 + 0.9 * V(L)  = -1 \\
+                        V(Q) &= 1 + 0.9 * V(Q) = 1 \\
+                    \end{align*}
+                    After repeating, many times:
+                    \begin{align*}
+                        V(L) &= -1 + 0.9 * -10  = -10 \\
+                        V(Q) &= 1 + 0.9 * 10 = 10 \\
+                    \end{align*}
+
+                    \item \textbf{Policy Improvement}
+                    \begin{align*}
+                        \pi(L) &= O \\
+                        \pi(Q) &= I \\
+                    \end{align*}
+
+                    \item \textbf{Policy Evaluation}
+                    \begin{align*}
+                        V(L) &= 1 + 0.9 * V(Q) = 10 \\
+                        V(Q) &= 1 + 0.9 * V(Q) = 10 \\
+                    \end{align*}
+
+
+                    \item \textbf{Policy Improvement}
+                    \begin{align*}
+                        \pi(L) &= O \\
+                        \pi(Q) &= I \\
+                    \end{align*}
+
+                \end{enumerate}
+                We see that the policy is stable, and hence we have found the optimal value function and optimal policy.
 
             \end{solution}
 
             \item (2 marks) Finally, what is your advice to ``At Wits End"?
 
             \begin{solution}
-
-
+                In the current minute, play the organ.
+                After than, stop playing the organ and burn incense forever.
             \end{solution}
 
 
