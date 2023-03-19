@@ -13,7 +13,6 @@
 \usepackage{ifthen}
 \usepackage{hyperref}
 \usepackage{marvosym}
-\usepackage{amsmath}
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\real}{\mathbb{R}}
@@ -88,11 +87,35 @@ receives a reward at each time step.
 
 \begin{solution}
 
+    In the standard case:
+    \[G_t = \sum_{k=0}^{\infty} \gamma^{k}R_{t + k + 1}\]
+
+    As the action is applied to the system at time $t + \tau$, only the rewards received after time $t + \tau$ are relevant.
+    Thus, we can define return as:
+
+    \[G_t = \sum_{k=0}^{\infty} \gamma^{k}R_{t + \tau + k + 1}\]
+
 \end{solution}
 
 \item (2 marks) Give the TD(0) backup equation for estimating the value function of a given policy.
 
 \begin{solution}
+
+The Monte-Carlo update equation is as follows:
+
+\[V(S_t) \leftarrow (1-\alpha) * V(S_t) + \alpha * G_t\]
+
+In our case:
+\begin{align*}
+V(S_t) &\leftarrow (1-\alpha) * V(S_t) + \alpha * ( \sum_{k=0}^{\infty} \gamma^{k}R_{t + \tau + k + 1})\\
+    &\leftarrow (1-\alpha) * V(S_t) + \alpha * (R_{t + \tau + k + 1} +  \sum_{k=1}^{\infty} \gamma^{k}R_{t + \tau + k + 1})\\
+    &\leftarrow (1-\alpha) * V(S_t) + \alpha * (R_{t + \tau + k + 1} +  V(S_{t + 1}))
+\end{align*}
+
+    The final $TD(0)$ update equation:
+    \[
+        V(S_t) \leftarrow V(S_t) + \alpha * (R_{t + \tau + k + 1} +  V(S_{t + 1}) - V(S_t))
+    \]
 
 
 \end{solution}
