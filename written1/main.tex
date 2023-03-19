@@ -406,7 +406,23 @@
             \item (2 marks) Give the complete specification of the world.
 
             \begin{solution}
+                The stochastic gridworld is the same as the deterministic gridworld except for the state transition probabilities.
 
+                Suppose the agent is currently a state $s$ and in a deterministic gridworld, the action $a$ would take it to state $s'$.
+                Let $s_1$, $s_2$, and $s_3$ be the other states adjacent to $s$.
+
+                We hence define the transition probabilities as follows:
+                \begin{align*}
+                    P \in &\mathcal{R}^{|S| \times 4 \times |S|}\\
+                    P_{ijk} &= {0} \\
+                    \text{for} \, s &\in S\\
+                    &P[s, a, s'] = (1-\epsilon) + \frac{\epsilon}{4} \\
+                    &P[s, a, s_1] = \frac{\epsilon}{4} \\
+                    &P[s, a, s_2] = \frac{\epsilon}{4} \\
+                    &P[s, a, s_3] = \frac{\epsilon}{4} \\
+                \end{align*}
+
+                The remaining specifications of the world are identical to that of the deterministic gridworld.
 
             \end{solution}
 
@@ -414,6 +430,9 @@
             \item (2 marks) Will SARSA on the two worlds converge to the same policy? Justify.
 
             \begin{solution}
+                % TODO: Not sure
+                SARSA learns the action value function for a given world. For the deterministic gridworld, the
+
 
             \end{solution}
 
