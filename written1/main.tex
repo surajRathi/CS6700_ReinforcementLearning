@@ -246,13 +246,43 @@
             dynamic programming. Can you think of a way to incrementally change your MDP formulation above to account for these changes?
 
             \begin{solution}
-
-
+                Here we would need to modify the reward generating step.
+                After the process described in 4.a, we must perform the following manipulation to the random variable.
+                \[
+                    \textbf{r} = \textbf{r} + 2 * H(a) - 4 * H(k_1 - 10) - 4 * H(k_2 - 10)
+                \]
+                Here, $H(x)$ refers to the Heaviside step function.
             \end{solution}
 
             \item (3 marks) Describe how the task of Jack’s Car Rental could be reformulated in terms of \textit{afterstates}. Why, in terms of this specific task, would such a reformulation be likely to speed convergence? \textit{(Hint:- Refer page 136-137 in RL book 2nd edition. You can also refer to the video at \href{https://www.youtube.com/watch?v=w3wGvwi336I}{https://www.youtube.com/watch?v=w3wGvwi336I})}
 
             \begin{solution}
+                %  TODO: you can explain this much better.
+                In the given question, we first move the cars and then apply a stochastic update based on the number of rentals and returns.
+                There are multiple states, which after a given action, would lead to the same number of cars in each lot for the stochastic step.
+
+                For example, let $s_1 = \{12, 10\}$) and $a_1 = 2$.
+                After applying the action, we get a state $s_{1i} = \{10, 10 \}$.
+                Similarly, for a state  $s_2 = \{10, 10\}$) and $a_1 = 0$, we get the same intermediate state $s_{2i} = \{10, 10 \}$
+
+                With both of the intermediate states, we must apply the stochastic update to get the final new state.
+                The state transition $s_{1i} \rightarrow s'_{1}$ is a possible realization of the state transition
+                from  $s_{2i} \rightarrow s'_{2}$.
+                However, our current formulation does not let each of the states learn from the other one.
+
+                We can call this intermediate state the `after state' and apply that concept here.
+                Here, instead of learning the action-value formulation, we can learn the afterstate-value formulation.
+                This is helpful as
+                \begin{enumerate}
+                    \item We reduce the memory required.
+                    The action value formulation has an upper bound of $20 * 20 * 10$ entries.
+                    The afterstate-value formulation only requires $20 * 20$ entires.
+                    This is an order of magnitude less than the first one.
+                    The advantages are more apparent when you consider problems with larger action space.
+                    \item Each afterstate gets more data from a fixed number of runs.
+                    This will massively speed up convergence.
+                \end{enumerate}
+
 
             \end{solution}
 
