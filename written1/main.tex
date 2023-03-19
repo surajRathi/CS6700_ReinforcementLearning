@@ -19,6 +19,7 @@
 \DeclareMathOperator{\E}{\mathbb{E}}
 \usepackage[ruled,vlined,noresetcount]{algorithm2e}
 \usepackage{enumitem}
+\usepackage{amsfonts}
 \marksnotpoints
 
 
@@ -184,6 +185,60 @@
             \item (4 marks) Formulate this as an MDP. What are the state and action sets? What is the reward function? Describe the transition probabilities (you can use a formula rather than a tabulation of them, but be as explicit as you can about the probabilities.) Give a definition of return and describe why it makes sense.
 
             \begin{solution}
+                % TODO: How does tuple notation work
+                Let us define the problem $M = \langle \mathcal{S}, \mathcal{A}, \mathcal{A}(s), p, r, \gamma \rangle$
+                \begin{align*}
+                    \mathcal{K} &= \{ 0, 1, 2 \dots , 20\} \\
+                    \mathcal{S} &= K^2 \\
+                    \mathcal{A} &= \{-5, -4, \dots, 4, 5\} \\
+                \end{align*}
+                The state is the number of cars at each location. For a state $s \in \mathcal{S}$,
+                $s_1$ refers to the number of cars at the first location,
+                and $s_2$ refers to the number of cars at the second location.
+                The action is the number of cars moved from the first to the second location,
+                where negative numbers represent movement in the other direction.
+
+                \[
+                    \mathcal{A}(s) = \{a : a \in \mathcal{A}, a \leq s_1, a \geq -s_2, s_1 - a \leq 20, s_2 + a \leq 20\}, s \in \mathcal{S}
+                \]
+
+                Then we shall define the random variables determining the state transition at each timestep:
+                \begin{align*}
+                    N_{rent}^{(1)} &\sim \operatorname{Pois}(3) \\
+                    N_{rent}^{(2)} &\sim \operatorname{Pois}(4) \\
+                    N_{return}^{(1)} &\sim \operatorname{Pois}(3) \\
+                    N_{return}^{(2)} &\sim \operatorname{Pois}(2) \\
+                \end{align*}
+
+                For a state $s \in \mathcal{S}$ and an action $a \in \mathcal{A}$, we can define the next state, $\textbf{s'}$,
+                as a 2-tuple of random variables and reward, $\textbf{r}$, as random variables.
+                \begin{align*}
+                    k &= s + \{-a, a\} \\
+                    N_{rented} &= \{\min{(k_i, N_{rent}^{(i)})} : i \in {1,2} \} \\
+                    k &= k - N_{rented} \\
+                    n_{rented} &= \{\min{(20, k_i + N_{return}^{(i)})} : i \in {1,2} \} \\
+                    \textbf{s'} &= \{k_1, k_2\}\\
+                    \textbf{r} &= 2 * |a| + 10 *( N_{rented}^{(1)} + N_{rented}^{(2)})
+                \end{align*}
+                With those random variables defined, we can write down the probability distribution as follows:
+
+                \begin{align*}
+                    p(s'| s, a) &= \mathbb{P}[\textbf{s'} = s'] \\
+                    p(r| s, a) &= \mathbb{P}[\textbf{r} =r ] \\
+                    r &= \E[\textbf{r}]
+                \end{align*}
+
+                In the given task, we will use the notion of discounted return.
+                \[
+                    G_t = \sum_{k=0}^{\infty}\gamma^k r_{t+k+1}
+                \]
+
+                This is reasonable, as in the physical sense, the reward is money.
+                This means that future rewards are worth less than immediate rewards.
+                In addition, the problem has an infinite time horizon, so to handle that we must use the concept of discounted returns.
+                % TODO: Elaborate
+                For the given problem, we could take $\gamma = 0.9$.
+
 
             \end{solution}
 
