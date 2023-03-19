@@ -13,9 +13,10 @@
 \usepackage{ifthen}
 \usepackage{hyperref}
 \usepackage{marvosym}
-\DeclareMathOperator*{\argmax}{arg\,max}
-\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{argmax\,}
+\DeclareMathOperator*{\argmin}{argmin\,}
 \DeclareMathOperator*{\real}{\mathbb{R}}
+\DeclareMathOperator{\E}{\mathbb{E}}
 \usepackage[ruled,vlined,noresetcount]{algorithm2e}
 \usepackage{enumitem}
 \marksnotpoints
@@ -129,13 +130,46 @@
         \begin{enumerate}[label=(\alph*)]
             \item (2 marks) Show mathematically that $M_1$ and $M_2$ has same optimal policies.
             \begin{solution}
+                \[
+                    \pi^*_1(s) = \argmax_{a\in \mathcal{A}} Q^*_1(s,a)
+                \]
+                For $M_2$, as $f$ does not depend on the action:
+                \begin{align*}
+                    \pi^*_2(s) &= \argmax_{a\in \mathcal{A}} Q^*_2(s,a)\\
+                    &= \argmax_{a\in \mathcal{A}}(Q^*_1(s,a) - f(s))\\
+                    &= \argmax_{a\in \mathcal{A}}(Q^*_1(s,a))
+                \end{align*}
+
+                Hence we see that $\pi^*_1(s)$ and $\pi^*_2(s)$ are equivalent.
 
             \end{solution}
 
             \item (3 marks) Now assume that $M_1$ and $M_2$ has the same state transition probabilities but different reward functions. Let $R_1(s, a, s')$ and $R_2(s, a, s')$ give the expected immediate reward for the transition from $s$ to $s'$ under action $a$ in $M_1$ and $M_2$, respectively. Given the optimal state-action value functions are related as given above, what is the relationship between the functions $R_1$ and $R_2$ ? That is, what is $R_1$ in terms of $R_2$ and $f$; OR $R_2$ in terms of $R_1$ and $f$.
 
             \begin{solution}
+                Using the Bellman optimality condition,
 
+                \begin{align*}
+                    Q^*(s, a) &= \E_{\pi^*}\left[\sum_{k=0}^\infty \gamma^k R_{t+k+1} | S_t=s, A_t =a \right]\\
+                    &= \sum_{s^{\prime}, r} p\left(s^{\prime}, r \mid s, a\right)\left[r+\gamma \max _{a^{\prime}} Q^*\left(s^{\prime}, a^{\prime}\right)\right]\\
+                \end{align*}
+                We can apply that to $M_1$ and $M_2$:
+                % Sutton 3.20\\
+                \begin{align*}
+                    Q^*_2(s, a) &=\sum_{s^{\prime}, r} p\left(s^{\prime}, r \mid s, a\right)\left[R_2(s, a, s^\prime)+\gamma \max _{a^{\prime}} Q^*_2\left(s^{\prime}, a^{\prime}\right)\right] \\
+                    Q^*_1(s, a) - f(s) &=\sum_{s^{\prime}, r} p\left(s^{\prime}, r \mid s, a\right)\left[R_2(s, a, s^\prime)+\gamma \max _{a^{\prime}} (Q^*_1\left(s^{\prime}, a^{\prime}\right) - f(s^\prime))\right] \\
+                    Q^*_1(s, a) &=\sum_{s^{\prime}, r} p\left(s^{\prime}, r \mid s, a\right)\left[\left(R_2(s, a, s^\prime) + f(s) - \gamma f(s^\prime)\right) +\gamma \max _{a^{\prime}} (Q^*_1\left(s^{\prime}, a^{\prime}\right))\right] \\
+                \end{align*}
+
+                We know that
+                \[
+                    Q^*_1(s, a) =\sum_{s^{\prime}, r} p\left(s^{\prime}, r \mid s, a\right)\left[R_1(s, a, s^\prime)+\gamma \max _{a^{\prime}} Q^*_1\left(s^{\prime}, a^{\prime}\right)\right]
+                \]
+
+                Comparing the two equations:
+                \[
+                    R_1(s, a, s^\prime) = R_2(s, a, s^\prime) + f(s) - \gamma f(s^\prime)
+                \]
             \end{solution}
 
         \end{enumerate}
