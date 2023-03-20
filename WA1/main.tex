@@ -457,6 +457,40 @@
         \question[5][Contextual Bandits] Consider the standard multi class classification task (Here, the goal is to construct a function which, given a new data point, will correctly predict the class to which the new point belongs). Can we formulate this as contextual bandit problem (Multi armed Bandits with side information) instead of standard supervised learning setting? What are the pros/cons over the supervised learning method. Justify your answer. Also describe the complete Contextual Bandit formulation.
 
         \begin{solution}
+            Yes we can formulate the standard multi class classification problem as a contextual bandits problem.
+            Let the data point be $d_t \in \mathcal{R}^N$ where $y_t$ is the correct class of  $k$ output classes.
+
+            \textbf{We then construct a contextual bandit with the following parameters:}
+            \begin{itemize}
+                \item Number of arms: $k$
+                \item Context: $s_t \in \mathcal{S}$, $\mathcal{S} = \mathcal{R}^N$
+                \item Rewards: $r_t \in [0, 1]^k$
+                \item For each timestep we can set:
+                \begin{itemize}
+                    \item $s_t = d_t$
+                    \item $r_{t, i} = \left\{ \begin{matrix}
+                                                  0 & \text{if }i \neq y_t \\
+                                                  1 & \text{if }i = y_t
+                    \end{matrix}\right.\, $
+                \end{itemize}
+                \item The chosen arm is the output the class estimated by the contextual bandit.
+            \end{itemize}
+
+
+            \textbf{Differences in the two methods:}
+            \begin{itemize}
+                \item Bandits is designed to be an online process.
+                It can simultaneously learn and perform on new data.
+                In the supervised learning problem, we first learn from a large block of data, then we perform on new data.
+                \item Bandits can also function on non-stationary problems.
+                Supervised learning representations may be more brittle to such cases.
+                \item Supervised learning algorithms do not suffer from the exploration-exploitation tradeoff.
+                \item The bandits algorithm only receives a single reward parameter as feedback.
+                The reward will also be quite sparse, as only one of the arms will give a nonzero reward.
+                In the supervised learning problem, the true classification is given as the feedback and the algorithm can quickly improve.
+
+            \end{itemize}
+
 
         \end{solution}
 
