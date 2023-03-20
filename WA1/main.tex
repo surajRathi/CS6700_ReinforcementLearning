@@ -431,8 +431,24 @@
 
             \begin{solution}
                 % TODO: Not sure
-                SARSA learns the action value function for a given world. For the deterministic gridworld, the
+                SARSA learns the action value function for a given world. Despite having the same family of trajectories in both gridworlds, the learned action value function is different.
+                The action value function is parameterized by the action chosen in each timestep. In the deterministic gridworld, the randomness is injected in choosing the action.
+                Then there is no randomness in applying the action to the agent, i.e. a given action will have the same effect on the agent each time.
+                The action value function has to learn a deterministic value.
 
+                However, in the stochastic gridworld, the randomness is injected after choosing the action. The agent will take a given action, but the actual effect could correspond to any one of the actions.
+                The action value function is trying to learn a probabilistic value. We can think of it as having `some noise' from the other actions.
+
+
+                In the end I believe that SARSA will converge to the same policy on both worlds. Despite the actual action value function being different, they will follow the same trend.
+                \[
+                    Q_{stochastic}(s, a) \sim \left(1-\frac{3}{4}\epsilon\right)Q_{det}(s, a) + \frac{\epsilon}{4}\sum_{b \in \mathcal{A} \backslash \{a\}}Q_{det}(s, b)
+                \]
+                In most cases, epsilon will be a reasonably small value ($\epsilon \lll \frac{2}{3}$), hence the action value function will be mostly dominated by the chosen action.
+
+
+                As the policy is chosen by applying the $\argmax_{a\in \mathcal{A}}$ operator, the policy learnt should be the same in both cases.
+                However, we must note that the policy may be affected if there are some state transitions with large negative rewards, or the value of $\epsilon$ is very large.
 
             \end{solution}
 
