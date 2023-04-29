@@ -496,11 +496,38 @@
 
         \question[5] [TD, MC, PG] Suppose that the system that you are trying to learn about (estimation or control) is not perfectly Markov. Comment on the suitability of using different solution approaches for such a task, namely, Temporal Difference learning, Monte Carlo methods, and Policy Gradient algorithms. Explicitly state any assumptions that you are making.
         \begin{solution}
+            The markov property is the basis for all of our reinforcement learning techniques.
+            Essentially, it states that the system dynamics depends on only the current state and action only.
+            This allows us to massively simplify our approach.
 
+            However, most real world problems are not actual markovian, but the methods developed for markov process seem to transfer quite well.
+
+            The non-markovian nature of the environment can be thought of as a hidden state that the RL method is unaware of, a.\ la. we dont know the entire state.
+
+            \begin{enumerate}
+                \item Temporal Difference Learning:
+                The markov assumption is used here when deriving the bellman equation for state values.
+                The state and reward probability distribution is assumed to be constant. This would only be true for markovian systems.
+
+                \item Monte Carlo Methods:
+                These methods learn only from the agent's experiences. It does not require any knowledge of the systems dynamics.
+                The main issue is that the model tries to estimate the future assuming that it knows all the relevant information. However this is not true.
+                Despite this, for simple non markovian problems, this will still work reasonably well as it only works on experience and doesnt estimate value functions.
+                \item Policy Gradient Algorithms:
+                Again, like TD learning, the deviation is based around the markov property. The state and reward probability distribution is assumed to be constant. This would only be true for markovian systems.
+
+            \end{enumerate}
         \end{solution}
 
         \question[5] [PG] Recent advances in computational learning theory, have led to the development of very powerful classification engines. One way to take advantage of these classifiers is to turn the reinforcement learning problem into a classification problem. Here the policy is treated as a labeling on the states and a suitable classifier is trained to learn the labels from a few samples. Once the policy is adequately represented, it can be then used in a policy evaluation stage. Can this method be considered a policy gradient method? Justify your answer. Describe a complete method that generates appropriate targets for the classifier.
         \begin{solution}
+            \textbf{Setting up the method:}
+            We set up the classifier to take the state as the input, and output the ideal action to be chosen.
+            We complete many runs with the
+
+            In a sense, this method can be thought of as a policy gradient method. The algorithm tries to learn a mapping between states and the ideal action to be taken. The model has some parameter vector ($\vec{\theta}$) that it is trying to learn. In most classifiers, the learning is done by gradient descent methods.
+
+            Hence, I can say that this method can be described as a policy gradient method.
 
         \end{solution}
 

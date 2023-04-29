@@ -1,0 +1,155 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[addpoints,12pt,solution]{exam}
+\printanswers
+\usepackage{amsmath,amssymb}
+\usepackage{comment}
+\usepackage{graphicx}
+\usepackage{ulem}
+\usepackage{paralist}
+\usepackage{psfrag}
+\usepackage{fullpage}
+\usepackage{fancybox}
+\usepackage{ifthen}
+\usepackage{hyperref}
+\usepackage{marvosym}
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\real}{\mathbb{R}}
+\usepackage[ruled,vlined,noresetcount]{algorithm2e}
+\usepackage{enumitem}
+\marksnotpoints
+
+
+\begin{document}
+
+
+\hrule
+\vspace{1mm}
+\noindent 
+\begin{center}
+{\Large CS6700 : Reinforcement Learning} \\
+{\large Written Assignment \#2}
+\end{center}
+\vspace{1mm}
+\noindent 
+\footnotesize{{\textbf{Topics}: Adv. Value-based methods, POMDP, HRL} \hfill \textbf{Deadline}: 30 April 2023, 11:59 pm
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Enter name and roll number here
+\noindent {\bf Name:}  \hfill {\bf Roll Number:} }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{2mm}
+\hrule
+
+{\small
+
+\begin{itemize}\itemsep0mm
+\item This is an individual assignment. Collaborations and discussions are strictly
+prohibited.
+\item Be precise with your explanations. Unnecessary verbosity will be penalized.
+\item Check the Moodle discussion forums regularly for updates regarding the assignment.
+\item Type your solutions in the provided \LaTeX template file.
+\item \textbf{Please start early.}
+\end{itemize}
+}
+
+\hrule
+
+\vspace{3mm}
+
+
+
+
+%\gradetable[h][questions]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%START HERE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{questions}
+
+\question[3] Recall the four advanced value-based methods we studied in class: Double DQN, Dueling DQN, Expected SARSA.
+While solving some RL tasks, you encounter the problems given below. Which advanced value-based method would you use to overcome it and why? Give one or two lines of explanation for `why’.
+\begin{enumerate}[label=(\alph*)]
+    \item (1 mark) Problem 1: In most states of the environment, choice of action doesn’t matter.
+    \begin{solution}
+
+    \end{solution}
+    \item (1 mark) Problem 2: Agent seems to be consistently picking sub-optimal actions during exploitation.
+    \begin{solution}
+ 
+    \end{solution}
+    \item (1 mark) Problem 3: Environment is stochastic with high negative reward and low positive reward, like in cliff-walking.
+    \begin{solution}
+    
+    \end{solution}
+\end{enumerate}
+
+
+\question[4] Ego-centric representations are based on an agent’s current position in the world. In a sense the agent says, I don’t care where I am, but I am only worried about the position of the objects in the world relative to me. You could think of the agent as being at the origin always. Comment on the suitability (advantages and disadvantages) of using an ego-centric representation in RL.
+
+\begin{solution}
+
+
+\end{solution}
+
+\question[12]
+Santa decides that he no longer has the memory to store every good and bad deed for every child in the world. Instead, he implements a feature-based linear function approximator to determine if a child gets toys or coal. Assume for simplicity that he uses only the following few features:
+
+\begin{itemize}
+    \item Is the child a girl? (0 for no, 1 for yes)
+    \item Age? (real number from $0-12$)
+    \item Was the child good last year? (0 for no, 1 for yes)
+    \item Number of good deeds this year
+    \item Number of bad deeds this year
+\end{itemize}
+Santa uses his function approximator to output a real number. If that number is greater than his good threshold, the child gets toys. Otherwise, the child gets coal.
+\begin{enumerate}[label=(\alph*)]   
+    \item (4 marks) Write the full equation to calculate the value for a given child (i.e., $f(s, \vec{\theta})=$ $\ldots)$, where $s$ is a child's name and $\vec{\theta}$ is a weight vector $\vec{\theta}=(\theta(1), \theta(2), \ldots, \theta(5))^{\mathrm{T}}$. Assume child $s$ is described by the features given above, and that the feature values are respectively written as $\phi_{s}^{\text {girl }}, \phi_{s}^{\text {age }}, \phi_{s}^{\text {last }}, \phi_{s}^{\text {good }}$, and $\phi_{s}^{\text {bad }}$.
+    \begin{solution}
+    
+    \end{solution}
+    
+    \item (4 marks) What is the gradient $\left(\nabla_{\vec{\theta}} f(s, \vec{\theta})\right)$ ? I.e. give the vector of partial derivatives
+    $$
+    \left(\frac{\partial f(s, \vec{\theta})}{\partial \theta(1)}, \frac{\partial f(s, \vec{\theta})}{\partial \theta(2)}, \cdots, \frac{\partial f(s, \vec{\theta})}{\partial \theta(n)}\right)^{\mathrm{T}}
+    $$
+    based on your answer to the previous question.
+    \begin{solution}
+
+    \end{solution}
+    \item (4 marks) Using the feature names given above, describe in words something about a function that would make it impossible to represent it adequately using the above linear function approximator. Can you define a new feature in terms of the original ones that would make it linearly representable?
+    \begin{solution}
+    
+    \end{solution}
+\end{enumerate}
+
+
+\question[5] We typically assume tabula rasa learning in RL and that beyond the states and actions, you have no knowledge about the dynamics of the system. What if you had a partially specified approximate model of the world - one that tells you about the effects of the actions from certain states, i.e., the possible next states, but not the exact probabilities. Nor is the model specified for all states. How will you modify Q learning or SARSA to make effective use of the model? Specifically describe how you can reduce the number of \textit{real} samples drawn from the \textit{world}.
+\begin{solution}
+
+
+\end{solution}
+
+\question[4] We discussed Q-MDPs in the class as a technique for solving the problem of behaving in POMDPs. It was mentioned that the behavior produced by this approximation would not be optimal. In what sense is it not optimal? Are there circumstances under which it can be optimal?
+
+\begin{solution}
+
+\end{solution}
+
+\question[3] This question requires you to do some additional reading. Dietterich specifies certain conditions for safe-state abstraction for the MaxQ framework. I had mentioned in class that even if we do not use the MaxQ value function decomposition, the hierarchy provided is still useful. So, which of the safe-state abstraction conditions are still necessary when we do not use value function decomposition.
+\begin{solution}
+
+
+\end{solution}
+
+\question[4] One of the goals of using options is to be able to cache away policies that caused interesting behaviors. These could be rare state transitions, or access to a new part of the state space, etc. While people have looked at generating options from frequently occurring states in a goal-directed trajectory, such an approach would not work in this case, without a lot of experience. Suggest a method to learn about interesting behaviors in the world while exploring. [\textit{Hint: Think about pseudo rewards.}]
+\begin{solution}
+
+\end{solution}
+
+\end{questions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%THE END%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}

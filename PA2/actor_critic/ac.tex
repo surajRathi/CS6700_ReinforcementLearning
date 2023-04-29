@@ -1,0 +1,380 @@
+%! Author = suraj
+%! Date = 3/27/23
+
+% Preamble
+\documentclass[A4]{article}
+\usepackage[a4paper,left=2.3cm,right=2.3cm,top=2.3cm,bottom=2.3cm]{geometry}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{blindtext}
+
+\usepackage[outputdir=../../out]{minted}
+\usepackage{tikz}
+\usepackage{textcomp}
+\usepackage{graphicx}
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30]
+\tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+\tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+% Document
+\begin{document}
+    \setcounter{section}{1}
+
+
+    \section{Actor Critic}\label{sec:actor-critic}
+
+    \subsection{Hyper-parameters}\label{subsec:ac_hyperparams}
+    \begin{enumerate}
+        \item \textbf{Network Size and Depth:} We assumed that the most fundamental part of the system was the neural network itself.
+        A shallow or low parameter count neural network will not be able to actually learn the value and action functions.
+        A deeper and wider neural network may over-fit or never converge.
+        We have looked at $\{1,2,3\}$ layered networks with $\{512, 1024, 2048\}$ neurons per layer.
+
+        \item \textbf{Learning Rate:} The learning rate affects how strongly the network will move towards a given input.
+        Higher learning rates result in faster motion of the model.
+        However, this makes it easy for the model to overshoot the optima and to descend into a local minima.
+        We have looked at learning rates in $\alpha \in \{10^{-3}, 10^{-4}, 10^{-5}\}$.
+
+        \item \textbf{Length of Returns:} This is a major factor that affects the variance and convergence of our models.
+        It indicates the degree of bootstrapping.
+        We have tried:
+        \begin{enumerate}
+            \item One Step Returns
+            \item n-Step Returns
+            \item Episodic Returns
+        \end{enumerate}
+        \item \textbf{Episodes:} The more episodes we train a model, the better its performance is.
+        However, in our experiments, we were heavily bound by the time and RAM limits on Google Colaboratory.
+    \end{enumerate}
+    We decided to first try a series of neural network shapes.
+    The networks were trained for 400 episodes each and the time taken by each episode was recorded.
+    The learning rate and the return length were set as the same as the tutorial network.
+    We are aiming to choose which can reach a given average reward as soon as possible.
+    (minimum time).
+
+    To account for different ideal learning rates, we will also observe the behavior of the network with episodes.
+    If a given architecture shows a steady upward trend, it may perform better than another network if we increase the learning rate.
+
+    \subsection{Implementation}\label{subsec:implementation}
+
+    The main model is created using tensorflow keras as shown in the tutorial.
+
+    \begin{center}
+        \begin{tikzpicture}[node distance=2cm]
+            \node (instate) [startstop] {Input State};
+            \node (hiddenlayers) [process, below of=instate] {Hidden Layers};
+            \node (valuelayer) [process, below of=hiddenlayers, xshift=-2cm] {Value Layer};
+            \node (policylayer) [process, below of=hiddenlayers, xshift=2cm] {Policy Layer};
+            \node (value) [startstop, below of=valuelayer] {Value Estimate};
+            \node (policy) [startstop, below of=policylayer] {Policy};
+
+            \draw [arrow] (instate) -- (hiddenlayers);
+            \draw [arrow] (hiddenlayers) -- (valuelayer);
+            \draw [arrow] (hiddenlayers) -- (policylayer);
+            \draw [arrow] (valuelayer) -- (value);
+            \draw [arrow] (policylayer) -- (policy);
+
+        \end{tikzpicture}
+    \end{center}
+
+    The above flowchart details the inner structure of the network used for $Q$ and $\pi$ prediction.
+    They are implemented as a single layer of neurons connected at the tail of a network of hidden layers.
+    The Policy output uses a softmax function to create a categorical distribution.
+
+
+    For result reproducibility, the following lines were added to the agent's \mintinline{python}|__init__| function.
+    The \mintinline{python}|seed_str| member is used to generate the seeds for sampling the action probabilities.
+    The environment is similarly seeded.
+    \begin{minted}{python}
+        random.seed(seed)
+        np.random.seed(seed)
+        tf.random.set_seed(seed)
+        self.seed_str = tfp.util.SeedStream(seed, salt="random_beta")
+    \end{minted}
+
+    The main changes when compared to the tutorial code were made in the learn function.
+    We had to modify it to implement n-step and episodic returns.
+
+    Here we see n-step returns. The below equation is implemented and we minimize the loss via backpropagation.
+    The learn function accumulates a set of n state/action/reward sets and then calls the learn\_impl function once enough samples are collected.
+    \[
+        \delta_t^{(n)}=\sum_{t'=t}^{n+t-1} \gamma^{t'-t} R_{t'+1}+\gamma^n v\left(s_{n+t}\right)-v\left(s_t\right)
+    \]
+    \begin{minted}{python}
+    # n-Step Returns
+    def learn(self, state, action, reward, next_state, done):
+        self.history.append((state, action, reward, next_state))
+
+        while len(self.history) >= self.h:
+            self.learn_impl(self.history[: self.h])
+            del self.history[0]
+
+        if done:
+            self.history = []
+
+    # @tf.function
+    def learn_impl(self, hist):
+        with tf.GradientTape(persistent=True) as tape:
+            state = hist[0][0]
+            action = hist[0][1]
+            # reward = None
+            next_state = hist[-1][3]
+
+            rewards = 0
+            for i in range(self.h):
+                rewards += hist[i][2] * self.gamma**i
+
+            pi, V_s = self.ac_model(state)
+            _, V_s_next = self.ac_model(next_state)
+
+            V_s = tf.squeeze(V_s)
+            V_s_next = tf.squeeze(V_s_next)
+
+            delta = rewards + self.gamma**self.h * V_s_next - V_s
+            loss_a = self.actor_loss(action, pi, delta)
+            loss_c = self.critic_loss(delta)
+            loss_total = loss_a + loss_c
+
+        gradient = tape.gradient(loss_total, self.ac_model.trainable_variables)
+        self.ac_model.optimizer.apply_gradients(
+            zip(gradient, self.ac_model.trainable_variables)
+        )
+    \end{minted}
+
+    And then we see episodic returns.
+    The learn function accumulates the state/action/reward sets for each step in the episode.
+    The learn\_impl function is called at the end of the episode to calculate the loss and back-propagates the gradients.
+    \[
+        \delta_t^{(T)}=\sum_{t'=t}^T \gamma^{t'-t} R_{t'+1}-v\left(s_t\right)
+    \]
+
+    \begin{minted}{python}
+    # Episodic Returns
+     def learn(self, state, action, reward, next_state, done):
+        self.history.append((state, action, reward, next_state))
+
+        # We only actually learn at the end of the ep
+        if done:
+            self.learn_impl(self.history)
+            del self.history
+            self.history = []
+
+    # @tf.function
+    def learn_impl(self, history):
+        with tf.GradientTape(persistent=True) as tape:
+            L_ac = 0
+            L_cr = 0
+
+            for t in range(len(history)):
+                state = history[t][0]
+                action = history[t][1]
+
+                rewards = 0.0
+                for i in range(len(history) - t):
+                    history[t + i][2] * self.gamma**i
+
+                pi, V_s = self.ac_model(state)
+                V_s = tf.squeeze(V_s)
+
+                delta = rewards - V_s
+                L_ac += self.actor_loss(action, pi, delta)
+                L_cr += self.critic_loss(delta)
+
+            loss_total = L_ac + L_cr
+
+        gradient = tape.gradient(loss_total, self.ac_model.trainable_variables)
+        self.ac_model.optimizer.apply_gradients(
+            zip(gradient, self.ac_model.trainable_variables)
+        )
+    \end{minted}
+
+    \subsection{Experiments}\label{subsec:results}
+
+    \subsubsection{CartPole-v1}
+    We first attempted to solve the cartpole problem as we had a baseline set of parameters from the tutorial.
+    In the cartpole environment, there is no goal, and hence we have set the threshold as a reward of 200 for the episode.
+
+    \paragraph{Network Size}
+
+    The first experiment was to modify the network size and see how well the agent responded to the training.
+    We used a variety of network shapes and sizes.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{/home/suraj/img/cartpole_network_size}
+        \caption{Performance of CartPole with different Network Shapes}
+        \label{fig:cartpole_shapes}
+    \end{figure}
+
+    \begin{itemize}
+        \item Each line represents the average of 10 runs with the same configuration but different starting seeds.
+        \item The thickness of the curve is proportional to the standard deviation of the rewards in the different realizations.
+        \item This convention is followed on most of the following figures.
+    \end{itemize}
+
+    The metric we are using here is the episodes required to reach 200 reward (averaged over 51 episodes).
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\textwidth]{/home/suraj/Pictures/Screenshots/img-2023-03-27-21-46-52}
+        \caption{Episodes to reach 200 average reward}
+        \label{fig:}
+    \end{figure}
+
+    Here we can clearly see that the $[2048, 1024]$ network architecture has performed the best.
+
+    \paragraph{Observations}
+    \begin{enumerate}
+        \item We see that the larger networks reach a higher reward much, much faster.
+        However, their performance then drops much lower later.
+        \item The rewards show significantly higher variance with more episodes.
+        \item The widest network $(2048, 1024)$ had the quickest performance.
+        Depth had less of an impact than width.
+        \item The narrowest network $(512, 256)$ also showed slow and consistent reward increases.
+        However, as the training time for one episode of the narrow network is approximately the same as training time for one episode of the wider network, the wider network is preferred. If there was a significant difference, then we would make a different choice.
+    \end{enumerate}
+
+    \paragraph{Learning Rate} The next experiment was to take the best performing network shape and test it with different learning rates.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{/home/suraj/img/cartpole_learningrate}
+        \caption{Averaged Reward for different learning rates}
+        \label{fig:cartpole_learningrate}
+    \end{figure}
+
+    \paragraph{Observations}
+    Here we can see that only the $lr=10^{-4}$ performed well and reached the desired reward threshold.
+
+    \paragraph{Length of Returns} Finally, we took various length of returns.
+    We tested with (i) $n=1$, (ii) $n=10$, (iii) $n=30$, and (iv) $n=T$.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{/home/suraj/img/cartpole_returnlength}
+        \caption{Averaged Reward for different return lengths}
+        \label{fig:}
+    \end{figure}
+
+    \paragraph{Observations}
+    \begin{enumerate}
+        \item We can see that the one step return Actor-Critic model performed the best over 200 iterations.
+        \item In terms of variance, the one step model had a very large variation across realizations.
+        The n-step returns and full returns had and order of magnitude lower variance.
+        \item For the given setup, the one step return variation achieves the required target in the lowest amount of episodes.
+        The performance of the other variations is much poorer.
+        \item We believe that this is due to the dense and immediate nature of the reward.
+        n-step and complete returns function better in cases where the reward is sparse.
+    \end{enumerate}
+
+    \paragraph{Number of Episodes}
+    The one step return variation was giving reasonable performance for the given goal, so we did not conduct many experiments on longer episode lengths.
+    Training for larger number of episodes was quite difficult because of longer runtime, and the timeouts of Google Colaboratory.
+    Below are the results for the few sucessfully executed configurations.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{/home/suraj/img/cartpole_episodes}
+        \caption{CartPole models with much larger training time}
+        \label{fig:}
+    \end{figure}
+    Each line represents a single realization.
+
+    \paragraph{Observations}
+    \begin{enumerate}
+        \item We can see that for the Complete returns case, even increasing the episodes by an order of magnitude was not sufficient to reach the goal.
+        \item For the one step return case, we see that it initially reaches the goal but then the network regresses and it takes a long time to reach the initial performance again.
+        This may be due to overwriting in the neural network.
+    \end{enumerate}
+
+    \subsubsection{Acrobot-v1}
+    Next, we attempted to solve the Acrobot environment with the same configuration as above. Our networks did not perform very well on this problem. This is mainly due to the sparseness of the reward. It takes a large amount of realizations or a large number of episodes for the network to achieve the reward.
+    In this environment, each episode was much slower than with the cartpole, and we had to reduce the number of iterations on each run.
+
+    \paragraph{Network Shape}:
+    We ran the configuration where $lr=10^{-5}$ and $n=1$ for different network shapes
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{/home/suraj/img/acrobot_layers}
+        \caption{Reward with Network Shape}
+        \label{fig:}
+    \end{figure}
+
+    \paragraph{Observation} As with the CartPole environment, we see that the network with the greater number of parameters performs better,
+    i.e. the configuration with $(2048, 1024)$ neurons performs better.
+
+    \paragraph{Learning Rate}:
+    We ran the configuration where $n=T$ for different learning rates.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{/home/suraj/img/acrobot_inf_lr}
+        \caption[Reward with Learning Rate]{}
+        \label{fig:}
+    \end{figure}
+
+    \paragraph{Observation} For $n=T$, we see that a higher learning rate performs better.
+
+    \paragraph{Length of Returns} Finally, we took various length of returns.
+    We tested with (i) $n=1$ and (ii) $n=T$.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{/home/suraj/img/arcorbot_ret_len}
+        \caption{Reward for Return Lengths}
+        \label{fig:}
+    \end{figure}
+
+    \paragraph{Observation}
+    \begin{itemize}
+        \item For $n=1$, the network performs considerably better.
+        \item However, similar to the cartpole environment, the variance is multiple orders of magnitude higher for the single step return configuration.
+        \item Due to the extremely poor performance of the complete return case, along with the very long runtime, we did not test the configurations for n-step returns.
+        In our experiments with the cartpole env, the n-step returns and complete returns had similar performance.
+    \end{itemize}
+
+    \paragraph{Episodes} This environment was more computationally expensive than the CartPole.
+    We were able to run a couple-hundred episodes for the single step returns case.
+    However, for the complete return case, we were unable to run more than 80 iterations
+    % We need to look into optimization of the complete returns code.
+
+    \subsubsection{MountainCar-v0}
+
+    The MountainCar environment was extremely challenging.
+    The runs took even longer than the other two enviornments.
+    The mountain car environment had very, very poor performance on the majority of the runs.
+
+    \emph{We did have very little success, with complete return configurations run with specific seeds.}
+    However, we had lost the data for those configurations and Google Collab was no longer offering us GPUs to use for free.
+    For future assignments we will try to get access to IITM's HPCF cluster.
+
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=\textwidth]{/home/suraj/img/mountaincar_v0}
+        \caption{Rewards with Episodes for MountainCar-v0}
+        \label{fig:}
+    \end{figure}
+
+    \paragraph{Observation}
+    \begin{itemize}
+        \item The Actor Critic algorithm found it extremely difficult to achieve any reward.
+        \item The method does not work well on sparse reward problems like these
+        \item The complete returns variation, despite being more computationally expensive, is ideal for this problem as it gives the maximum amount of training when a reward is finally achieved.
+        \item Exploration is extremely important here, and we can try to implement a variation of optimistic initialization to better explore the state space and find the states closer to the reward.
+    \end{itemize}
+
+    \subsection{Conclusion}\label{subsec:conclusions}
+    \begin{itemize}
+        \item A larger network size helps tremendously speed up the speed at which the network learns.
+        \item The learning rate is heavily influenced by the specific configuration and needs to be tuned for each of them.
+        \item Regarding Return Length \begin{itemize}
+                                          \item Single step returns are ideal for environments with dense rewards. It requires us to frequently hit rewards to train faster. It is also computationally less expensive.
+                                          \item Complete returns are ideal for environments for sparser rewards. They make the most out of each reward gained and train the maximum number of states with that. However it is much more computationally expensive and difficult to train for a large number of episodes.
+                                          \item n-Step returns have performance in between single step and complete returns.
+                                          \item Single step return configurations show higher variance of reward over the different realizations as compared to n-step and complete return configurations.
+        \end{itemize}
+        \item It is important to run each configuration over multiple seeds as there is usually a large variation in performance.
+        \item We need to get access to more powerful or at least longer running machines, so that we can train to a much higher episode count.
+        (Especially for the complete return scenario.)
+    \end{itemize}
+
+\end{document}

@@ -1,0 +1,351 @@
+\documentclass{article}
+\usepackage{comment}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{ulem}
+\usepackage{paralist}
+\usepackage{psfrag}
+\usepackage{fullpage}
+\usepackage{fancybox}
+\usepackage{ifthen}
+\usepackage{hyperref}
+\usepackage[ruled,vlined,noresetcount]{algorithm2e}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{hhline}
+\usepackage{floatrow} % in the preamble
+\usepackage{subcaption} % in the preamble
+\usepackage{multirow}
+
+\begin{document}
+
+    \hrule
+    \vspace{1mm}
+    \noindent
+    \begin{center}
+    {\Large CS6700 : PROGRAMMING ASSIGNMENT 2 REPORT }
+    \end{center}
+    \vspace{1mm}
+    \noindent
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Enter name and roll number here
+    \noindent MRITYUNJAY UPADHYAY(OE22S002) \hfill SURAJ SURENDRA RATHI (ME19B177)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    \vspace{2mm}
+    \hrule
+    % \newline
+    \vspace{4mm}
+    \textbf{\Large{Abstract}}\\
+
+    This report showcases the application of advanced reinforcement learning techniques, specifically Deep Q-Networks (DQN) and Actor-Critic methods, to effectively train an agent in addressing three distinct and challenging RL problems,\\
+    1. Cart-Pole v1 \\
+    2. Acrobot v1  \\
+    3. Mountain-Car v0 \\
+    Throughout the process, the hyper-parameters used in the RL methods
+    are tuned to provide faster and more efficient results, and inferences are
+    made regarding ho w the behaviour of the learning agent changes in accordance with the same.\\
+    \newline
+    \textbf{\huge{PART 1: DQN}}\\
+
+    \textbf{\Large{Hyper-parameters}}\\
+
+    The hyper-parameters used to tune the DQN method are:
+    \begin{enumerate}[label=\arabic*.]
+        \item \textbf{Batch Size} - Size of each training batch
+        \item \textbf{Buffer Size} - Size of Replay Buffer
+        \item \textbf{Learning Rate} - Rate at which the Q-Network weights are adjusted in response to the estimated error.
+        \item \textbf{Epsilon Decay} - Rate of Decay of `$\epsilon$' in the $\epsilon$-greedy policy used to update the Q-Network
+        \item \textbf{Target Network Update Delay} - Frequency at which the main Q-Network is updated with respect to the target Q-Network which helps improve learning stability
+        \item \textbf{Gamma} - Discount factor that determines the importance of future rewards in the agent's decision-making process.
+    \end{enumerate}
+
+    \newpage
+
+    \textbf{\large{EXPERIMENTS AND OBSERVATIONS}}\\
+
+    We applied the DQN algorithm to three Classic Control environments, namely Cartpole-v1, Acrobot-v1, and MountainCar-v0. To account for instability, we ran multiple sub-experiments with 12 different hyper-parameter configurations. We terminated the algorithm when an average reward of 475 was achieved over 10000 consecutive episodes for Cartpole-v1, and an average reward of -110 was achieved over 500 episodes for MountainCar-v0. For Acrobot-v1, we trained the agent for 1000 episodes and compared the average score obtained over 10 consecutive episodes across different configurations. We used the $\epsilon$-greedy strategy with linear annealing from 1 to 0.01 by a factor of 0.995 for better exploration.\\
+
+    \textbf{ INITIAL PARAMETERS} \\
+    \begin{itemize}
+        \item We proceed initially using the same hyperparameters used in Tutorial 5
+        and train the Agent:\\
+
+
+        \begin{tabularx}{0.8\textwidth} {
+            | >{\raggedright\arraybackslash}X
+            | >{\raggedright\arraybackslash}X
+            | >{\centering\arraybackslash}X
+            | >{\raggedleft\arraybackslash}X
+            | >{\raggedleft\arraybackslash}X
+            | >{\raggedleft\arraybackslash}X| }
+            \hline
+            Buffer Size & Batch Size & Learning Rate & Epsilon Decay & Update every & Gamma \\
+            \hline
+            100000      & 64         & 5x10^{-4}     & 0.995         & 20           & 0.99  \\
+            \hline
+        \end{tabularx}
+
+        \item We use the above hyperparameters in the DQN to train the agent in solving the CartPole and Acrobot problems. The following are the obtained results:
+    \end{itemize}
+
+    \begin{center}
+        \textbf{\underline{ CartPole v1 results}}
+    \end{center}
+
+    \begin{table}[htbp]
+        \centering
+        \begin{tabular}{|c|c|}
+            \hline
+            \multicolumn{1}{|c|}{\multirow{2}{*}{Average number of episodes required to train agent}} & \multicolumn{1}{c|}{Average Reward across episodes during an average iteration} \\
+            \multicolumn{1}{|c|}{}                                                                    & \multicolumn{1}{c|}{during an average iteration}                                \\
+            \hline
+            1295                                                                                      & 242                                                                             \\
+            \hline
+        \end{tabular}
+    \end{table}
+
+    \begin{center}
+        \textbf{\underline{ Acrobot v1 results}}
+    \end{center}
+
+    \begin{table}[htbp]
+        \centering
+        \begin{tabular}{|c|c|}
+            \hline
+            \multicolumn{1}{|c|}{\multirow{2}{*}{Average best Reward
+            across iterations}}    & \multicolumn{1}{c|}{Average Reward across episodes during an average iteration} \\
+            \multicolumn{1}{|c|}{} & \multicolumn{1}{c|}{during an average iteration}                                \\
+            \hline
+            -70.96                 & -119                                                                            \\
+            \hline
+        \end{tabular}
+    \end{table}
+
+    \textbf{\underline{Observations}}\\
+    \begin{itemize}
+        \item From the reward curves of the 2 RL problems we can see that the agent gradually learns to solve both environments and yield high rewards in the course of running episodes during an iteration. \\
+        \item We can also establish metrics to evaluate the learning capability of the agent by computing: \\
+        - average number of episodes required to cross reward threshold \\
+        - average reward obtained in an iteration \\
+        - best reward obtained in the average iteration \\
+        \item The computed metrics for each RL problem using initial hyperparameters are tabulated as shown above. \\
+    \end{itemize}
+    \newpage
+
+
+    \begin{center}
+        \textbf{\underline{Table 1: Effect of Hyper-Parameters on CartPole-v1}}
+    \end{center}
+
+    \begin{table}[htbp]
+        \centering
+        \begin{tabular}{|c|c|c|c|}
+            \hline
+            \textbf{S. No.} & \textbf{Configurations} & \multicolumn{1}{c|}{\multirow{2}{*}{\shortstack{\textbf{Average number of episodes} \\ \textbf{required to train agent}}}} & \multicolumn{1}{c|}{\textbf{Average Reward across episodes}} \\
+            \multicolumn{1}{|c|}{}                      & \multicolumn{1}{c|}{}  & \multicolumn{1}{c|}{}                  & \multicolumn{1}{c|}{\textbf{during an average iteration}}                                                       \\
+            \hline\hline
+            1                      & buffer size = $10^4$  & 1057                  & 213                                                       \\
+            \hline
+            2                      & buffer size = $10^6$       & 1977                  & 243                                                        \\
+            \hline
+            3                      & batch size = 32      & 9900                  & 21                                                       \\
+            \hline
+            4                      & batch size = 128      & 8541                  & 139                                                       \\
+            \hline
+            5                      & LR = 5x10$^{-3}$      & 6808                  & 120                                                       \\
+            \hline
+            6                      & LR = 1x10$^{-4}$      & 2416                  & 162                                                        \\
+            \hline
+            7                      & $\epsilon$ = 0.9    & 5083                  & 80                                                        \\
+            \hline
+            8                      & $\epsilon$ = 0.998      & 3969                  & 96                                                        \\
+            \hline
+            9                     & update every = 5     & 5043                  & 67                                                       \\
+            \hline
+            10                     & update every = 50      & 5525                  & 149                                                        \\
+            \hline
+            11                     & $\gamma = 0.979$      & 9900                  & 67                                                       \\
+            \hline
+            12                     & $\gamma = 0.998$      & 1899                  & 168                                                       \\
+            \hline
+        \end{tabular}
+        \label{tab:my_label}
+    \end{table}
+
+
+    \begin{center}
+        \textbf{\underline{ Table 2: Effect of Hyper-Parameters on Acrobot-v1}}
+    \end{center}
+    \\
+
+    \begin{table}[htbp]
+        \centering
+        \begin{tabular}{|c|c|c|c|}
+            \hline
+            \textbf{S. No.} & \textbf{Config} & \multicolumn{1}{c|}{\multirow{2}{*}{\shortstack{\textbf{Average best Reward} \\ \textbf{across iterations}}}} & \multicolumn{1}{c|}{\textbf{Average Reward}} \\
+            \multicolumn{1}{|c|}{}                      & \multicolumn{1}{c|}{}  & \multicolumn{1}{c|}{\textbf{}}                            & \multicolumn{1}{c|}{\textbf{across episodes}}                                          \\
+            \hline\hline
+            1                      & buffer size = $10^4$  & -75                            & -125                                          \\
+            \hline
+            2                      & buffer size = $10^6$       & -72                            & -119                                          \\
+            \hline
+            3                      & batch size = 32      & -75                            & -125                                          \\
+            \hline
+            4                      & batch size = 128      & -72                         & -119                                          \\
+            \hline
+            5                      & LR = 5x10$^{-3}$      & -81.96                         & -139                                          \\
+            \hline
+            6                      & LR = 1x10$^{-4}$      & -71.36                         & -119                                          \\
+            \hline
+            7                      & $\epsilon$ = 0.9    & -71.66                         & -120                                          \\
+            \hline
+            8                      & $\epsilon$ = 0.998      & -72.68                         & -119                                          \\
+            \hline
+            9                     & update every = 5     & -71.82                         & -119                                          \\
+            \hline
+            10                     & update every = 50       & -77.97                         & -130                                          \\
+            \hline
+            11                     & $\gamma = 0.95$      & -72.36                         & -119                                          \\
+            \hline
+            12                     & $\gamma = 0.979$      & -73.94                         & -125                                          \\
+            \hline
+        \end{tabular}
+    \end{table}
+
+    \textbf{ 1. Altering Buffer Size of Replay Buffer} \\
+    \begin{itemize}
+        \item The buffer size of the Replay is altered with the objective of improving
+        the agent. Two alternate buffer sizes are used in the DQN \\
+        a) buffer size = $10^4$ \\
+        b) buffer size = $10^6$, \\keeping the
+        remaining hyperparameters constant,\\
+
+
+        \textbf{\underline{Observations}}
+        \begin{itemize}
+            \item A larger Buffer Size results in lesser occurrences of the agent sampling
+            correlated elements. Hence, the training of the Q-network becomes more
+            stable.
+            \item This behaviour is observed in the Reward curves plot of Cartpole-v1 where
+            a larger buffer size resulted in a more stable rise in the rewards obtained
+            in course of running episodes, whereas the learning curve was more steep
+            and sudden for a lower buffer size.
+            \item In addition, a better set of rewards were obtained in the Acrobot-v1 simulation for the large buffer size as well, with a slight improvement on the
+            best reward obtained and the average reward obtained across an iteration.
+            \item Unfortunately, some consequences of a large buffer size are higher computational cost and a slower training process of the agent.
+        \end{itemize}
+
+        \textbf{ 2. Altering Batch Size of Replay Buffer} \\
+        \begin{itemize}
+            \item The batch size of the Replay Buffer is altered with the objective of improving the agent,\\
+            a) batch size = 32\\
+            b) batch size = 128 \\
+            keeping rest of the parameters similar to the initial parameter values. \\
+        \end{itemize}
+
+        \textbf{\underline{Observations}}
+        \begin{itemize}
+            \item A higher batch size for the replay buffer implies that a larger collection
+            of Q-states are sampled at an instant from the replay buffer. The result
+            is an improved learning capability of the agent due to lower bias arising
+            from correlation between collected samples
+            \item The improvement in learning capability can be clearly observed from the
+            average number of episodes required to train the agent in solving the Cart-
+            pole problem, which is significantly lesser when the batch size is increased. An improved set of rewards is also observed for the Acrobot problem as
+            well.
+        \end{itemize}
+
+
+        \textbf{ 3. Altering Learning Rate} \\
+        \begin{itemize}
+            \item The Learning Rate of the DQN method is altered with the objective of
+            improving the agent,\\
+            a) LR = 0.005 \\
+            b) LR = 0.0001\\
+            keeping rest of the parameters constant. \\
+        \end{itemize}
+
+        \textbf{\underline{Observations}}
+        \begin{itemize}
+            \item A high learning rate often results in the agent learning faster, but a downside to this is that the agent may not achieve an optimal result and hence can reduce the peak rewards obtained by the agent during a simulation.
+            \item We can observe that a higher learning rate improved the agent’s ability to solve the CartPole environment in lesser number of episodes, but consequently, we can also observe that the best reward obtained across iterations of the Acrobot simulation has reduced, along with the average
+            reward obtained across an iteration for both the simulations.
+        \end{itemize}
+        \newpage
+        \textbf{ 4. Altering Decay Rate of Epsilon ($\epsilon$)}\\
+        \begin{itemize}
+            \item The Decay Rate of $\epsilon$ in the $\epsilon$-greedy policy used for updating the Q-
+            Networks is altered with the objective of improving the agent, \\
+            a) $\epsilon$ = 0.9 \\
+            b) $\epsilon$ = 0.998 \\
+            keeping rest of the parameters constant. \\
+        \end{itemize}
+
+        \textbf{\underline{Observations}}
+        \begin{itemize}
+            \item The target network update delay determines how frequently the main Q-
+            Network is updated over the target Q-network. A high update delay (low
+            update frequency) results a more stable learning rate, but consequently
+            results in a more slower learning rate of the agent.
+            \item The above indications are apparent in the reward curves of the Cartpole
+            simulation, where a low update delay (high frequency) results in a faster
+            learning rate of the agent, whereas a high update delay yields a slightly
+            higher average reward, but at the cost of a expensive requirement of num-
+            ber of episodes to solve the environment.
+            \item The benefits of implementing a high update delay are more apparent in
+            the Acrobot problem, where the improved stability results in higher peak
+            and average rewards of the agent when solving the environment.
+        \end{itemize}
+
+        \textbf{ 5. Altering Update Delay of Target Q-Network}\\
+        \begin{itemize}
+            \item The frequency with which the Target Q-Network is updated with respect
+            to the main Q-Network is altered with the objective of improving the
+            agent,\\
+            a) update delay = 5 \\
+            b) update delay = 50 \\keeping rest of the parameters constant. \\
+        \end{itemize}
+
+
+        \textbf{\underline{Observations}}
+        \begin{itemize}
+            \item The target network update delay determines how frequently the main Q-
+            Network is updated over the target Q-network. A high update delay (low
+            update frequency) results a more stable learning rate, but consequently
+            results in a more slower learning rate of the agent.
+            \item The above indications are apparent in the reward curves of the Cartpole
+            simulation, where a low update delay (high frequency) results in a faster
+            learning rate of the agent, whereas a high update delay yields a slightly
+            higher average reward, but at the cost of a expensive requirement of num-
+            ber of episodes to solve the environment.
+            \item The benefits of implementing a high update delay are more apparent in
+            the Acrobot problem, where the improved stability results in higher peak
+            and average rewards of the agent when solving the environment.
+        \end{itemize}
+        \newpage
+        \textbf{ 6. Altering Gamma} \\
+        \begin{itemize}
+            \item The frequency with which the Target Q-Network is updated with respect
+            to the main Q-Network is altered with the objective of improving the agent,\\
+            a) $\gamma$ = 0.979 \\
+            b) $\gamma$ = 0.998 \\
+            keeping rest of the parameters constant. \\
+        \end{itemize}
+
+        \textbf{\underline{Observations}}
+        \begin{itemize}
+            \item The discount factor gamma determines the importance of future rewards relative to immediate rewards in the agent's decision making. A higher gamma value places more weight on future rewards, leading the agent to consider longer-term consequences of its actions.
+            \item In the Cartpole environment,a higher value of gamma can result in a slower learning rate for the agent, as it may cause the agent to prioritize long-term rewards over short-term rewards. This can lead to the agent taking longer to converge to an optimal policy, which may result in a higher number of episodes required to train the agent..
+            \item Similarly, in the Acrobot environment, a higher gamma value can help the agent learn to perform longer and more complex sequences of movements. However, a very high gamma value can also make the agent more cautious and less likely to take risks. A lower gamma value can encourage the agent to take risks and explore new actions, but can also result in unstable behavior and poor performance.
+        \end{itemize}
+
+        \textbf{\underline{Observations on MountainCar-v0 Simulation}}\\
+
+        We found that the agent struggled to solve the MountainCar environment when using a large number of episodes (10000), despite tuning the hyperparameters to improve learning. To address this issue, we reduced the number of episodes to 1000 for the first 3 runs and then to 500 episodes for the rest of the runs. However, even with these changes, the rewards obtained across episodes only improved slightly. Our experiments showed that the agent requires a significant number of episodes to learn an effective policy for this environment..\\
+
+        \textbf{\large{Conclusion}}\\
+
+        To improve the model performance across all three environments, we experimented with various hyper-parameters. We found that reducing the number of target update frequency steps, increasing the network size, increasing the memory-capacity of the replay buffer, and increasing the batch size all led to improvements. These changes allowed the model to better capture the dynamics of each environment and learn more effective policies.
+
+    \end{itemize}
+\end{document}
