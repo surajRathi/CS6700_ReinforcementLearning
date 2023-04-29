@@ -7,6 +7,7 @@
 
 % Packages
 \usepackage{amsmath}
+\usepackage{listings}
 \usepackage{indentfirst}
 \usepackage[outputdir=../out]{minted}
 \usepackage{textcomp}
@@ -27,6 +28,10 @@
     \subsection{Description}
 
     \noindent We implemented SMDP Q-Learning for the \emph{Gymnasium Gym’s Taxi-v3} environment.
+    SMDP (Semi-Markov Decision Process) is an extension of the Markov Decision Process (MDP) that allows for actions to have variable durations, or in other words, actions can span multiple time steps.
+    SMDPs provide a framework for modeling decision-making in domains with temporal abstraction, where high-level actions or options can be defined to reduce the complexity of the decision problem.
+    The Q-values get updated according to the equation:
+    \[Q_{k+1}(s, o) = Q_k(s, o) + \alpha [r + \gamma \max_{o' \in \mathcal{O}_{s'}} Q_k(s', o') - Q_k(s, o)]\]
 
     \subsubsection{Color Options SMDP}
     \begin{itemize}
@@ -155,9 +160,8 @@
 
     \begin{figure}[H]
         \centering
-        \includegraphics[width=\textwidth]{./img/smdp_performance_comparision}
+        \includegraphics[width=\textwidth]{./img/smdp_performance_comparsion}
         \caption{Reward curves and test performance for the Color Options SMDP Q-Learning Network.}
-        \label{fig:smdp_performance_comparision}
     \end{figure}
 
     We see that the option based framework converges much quicker and shows a higher average reward over the training process.
@@ -170,7 +174,7 @@
     \begin{figure}[H]
         \centering
         \includegraphics[width= 0.7\textwidth]{./img/smdp_policy_labelled}
-        \caption{A matrix showing the SMDP's policy and value functions.}\label{fig:smdp_policy}
+        \caption{A matrix showing the SMDP's policy and value functions.}
     \end{figure}
 
     In the above figure, we can see a heatmap of the value function of the states in the SMDP's Q-network.
@@ -183,7 +187,7 @@
     \end{enumerate}
 
     This is reasonable.
-    Our goal is to driop the passenger off at the destination in as few steps as possible (reduces the negative reward).
+    Our goal is to drop the passenger off at the destination in as few steps as possible (reduces the negative reward).
     The above policy achieves that goal.
 
     \subsubsection{Color Option Policy}
@@ -193,7 +197,7 @@
     \begin{figure}[H]
         \centering
         \includegraphics[width=0.7 \textwidth]{./img/smdp_option_policy}
-        \caption{A representation of the policy of the color-options.}\label{fig:smdp_option_policy}
+        \caption{A representation of the policy of the color-options.}
     \end{figure}
 
     The policy is reasonable as it assigns squares closer to the goal color with higher value
@@ -248,7 +252,7 @@
 
     \begin{figure}[H]
         \centering
-        \includegraphics[width=0.3 \textwidth]{./img/pick_drop_value_func}
+        \includegraphics[width=0.5 \textwidth]{./img/pick_drop_value_func}
         \caption{PickDrop SMDP Value Function}
         \label{fig:pick_drop_value_func}
     \end{figure}
@@ -258,9 +262,9 @@
     It just wraps each of the basic actions with an immediately terminating option.
     \begin{figure}[H]
         \centering
-        \includegraphics[width=\textwidth]{./img/smdp_option_comparision}
-        \caption{Comparision of different Option formulations.}
-        \label{fig:smdp_option_comparision}
+        \includegraphics[width=\textwidth]{./img/smdp_option_comparsion}
+        \caption{Comparison of different Option formulations.}
+        \label{fig:smdp_option_Comparison}
     \end{figure}
 
     We can see that the Pick-Drop option formulation performs better than the given (Color) option formulation.
@@ -269,6 +273,167 @@
 
     \section{Intra-Option Q-Learning}
 
+    \subsection{Description}
+    The main idea behind the Intra-option Q Learning is as follows: ``More interesting and potentially
+    more powerful methods are possible by taking advantage of the structure inside each option.
+    In Intra-option learning, whatever be the selected option, the state-action value
+    for the primitive action as well as options that would have selected the same
+    action will be updated.''
+    The Q-values get updated according to the equation:
+    \begin{gather*}
+        Q_{k+1}(s,o) = (1-\alpha)Q_k(s,o)+\alpha[(r_{t+1} + \gamma U_k(s,o)]\\
+        U_k(s,o) = (1-\beta)(Q_k(s,o)+ \gamma \max_{o' \in \mathcal{O}_{s'}}{Q_k(s,o') }\\
+    \end{gather*}
+    For primitive actions (state-action pairs), we use regular Q-learning update.
 
-    \section{Conclusion: SMDP Q-Learning vs Intra-Option Q-Learning}
+    \subsection{Color Option IntraOption , color option and Primitive Option}
+    This has same structure as the SMDP has.
+
+    \subsubsection{Test Framework}
+    While average reward is typically a useful measure of success, in this case we determined that it was equally important to monitor the percentage of times the environment was successfully resolved. To achieve this, we executed the network in evaluation mode, without any training, for 100 iterations using a predetermined seed.
+
+    \subsection{Implementation}
+    Our attention is directed towards \textbf{policy} and \textbf{update} functions for the Color IntraOption and Color option.
+    During the evaluation phase, the network remains static and does not adjust its internal state (i.e., no learning takes place). It is worth noting that all of the IntraOption networks and runners operate using a single seeded generator, ensuring that the outcomes are entirely reproducible.
+
+    \subsubsection{Color Options IntraOption}
+    \begin{minted}[linenos]{python}
+        def policy(self, state: int, eval=False):
+            if self.option is None:
+                low_state = self.to_lower_state(state)
+
+                self.option_id = self.net.policy(low_state,  eval=eval)
+
+                self.option = self.options[self.option_id]
+                self.option.start()
+                self.l_start_state = low_state
+                self.r_bar = 0.0
+
+            return self.option.policy(state, eval=eval)
+    \end{minted}
+
+    The policy method selects and executes an option based on the current state. If no option is selected, it samples an option from a Q-network and executes its policy, while the eval parameter controls if it's during training or evaluation.
+
+    \begin{minted}[linenos]{python}
+    def update(self,state: int,action: int,reward: float, next_state: int, done: bool, eval=False):
+        assert self.option is not None
+
+        self.option.update(state, action, reward, next_state, done, eval)
+
+        self.r_bar +=  reward
+        if self.option.is_done():
+            self.option.finish()
+            self.option = None
+
+            l_next_state = self.to_lower_state(next_state)
+            self.net.update(
+                self.l_start_state, self.option_id, self.r_bar, l_next_state, done, eval
+            )
+    \end{minted}
+
+    We first execute the option's update function.
+    If the option is complete, we use the q-learning update equation to update our IntraOption policy.
+
+    \subsection{Performanance}
+    The network was trained for 3000 episodes with relatively standard hyperparameter values.
+    In the below figure we can see the test results and reward curve for the network.
+    To offer a baseline for reference, we show the results of vanilla Q-Learning
+    as well as Color Options IntraOption where the outer policy was set by a human expert instead of learned.
+
+    The yellow line indicates the performance of the Color Option IntraOption network.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{./img/comparsion_q_c_p}
+        \caption{Reward curves and test performance for the Color Options IntraOption Q-Learning Network.}
+        \label{fig:smdp_performance_Comparison}
+    \end{figure}
+
+    We see that the option based framework converges much quicker and shows a higher average reward over the training process.
+    The Q-learning based approach takes at least twice the number of episodes to show similar average reward
+    and 3 times the episodes to show similar test success rates.
+
+    \subsection{Policy Visualization and Description}
+
+    \subsubsection{IntraOption Policy}
+    \begin{figure}[H]
+        \centering
+        \centering
+        \includegraphics[width=0.5\textwidth]{./img/IntrOPtionpd}
+    \end{figure}
+
+    In the above figure, we can see a heatmap of the value function of the states in the IntraOption's Q-network.
+    The action with the highest value is written in the square.
+    Darker colors indicate higher value.
+    We can summarize the policy in two lines:
+    \begin{enumerate}
+        \item Go to the color where the passenger is in, and execute the pickup action.
+        \item Go to the color of the destination, and execute the dropoff action.
+    \end{enumerate}
+
+    This is reasonable.
+    Our goal is to drop the passenger off at the destination in as few steps as possible (reduces the negative reward).
+    The above policy achieves that goal.
+
+    \subsubsection{Color Option Policy}
+    The objective of the color option policy is to minimize the number of steps required for the taxi to reach the required colored square. The heatmap representing the value function for each color option shows that the policy assigns higher values to squares that are closer to the desired color.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.7 \textwidth]{./img/intraoq}
+        \caption{A representation of the policy of the color-options.}\label{fig:intraoq}
+    \end{figure}
+
+    The policy is visualized using arrows, which point towards the respective colored square. Therefore, the policy seems reasonable and effective in achieving the goal of bringing the taxi to the required colored square in the shortest possible time.
+
+    \subsection{Pick-Drop Option Formulation}
+    We framed a set of options which are mutually exclusive with the given options, we refer to this as the `Pick-Drop Formulation` the definition is same as for SMDP in above section
+
+    \subsubsection{Results}
+    The IntraOption learned the following value function.
+    We can see that it tries to pick up the passenger if he isn't currently in the taxi, and tries to drop him off otherwise.
+
+    \subsubsection{IntraOption Policy}
+    \begin{figure}[H]
+        \centering
+        \centering
+        \includegraphics[width=0.5\textwidth]{./img/Intraoptionpickdrop}
+        \caption{Reward Curve}
+    \end{figure}
+
+    \noindent We ran three option networks to compare the performance: Primitive Option SMDP, Color Options SMDP, and PickDrop Options SMDP and PickDrop Intraoption.
+    The Primitive option network performs identically to the vanilla Q-Learning approach.
+    It just wraps each of the basic actions with an immediately terminating option.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{./img/interopsmdp}
+        \caption{Comparison of different Option formulations.}
+    \end{figure}
+
+    We can see that the Pick-Drop option formulation performs better than the given (Color) option formulation.
+    And that too for Intraoption rather than SMDP
+    It is quicker to converge and shows a higher average reward.
+
+    \subsubsection{Comparison between SMDP and IntraOption based on color option }
+    \begin{figure}[H]
+        \centering
+        \centering
+        \includegraphics[width=\textwidth]{./img/comp_color}
+    \end{figure}
+    Based on the observation, the results suggest that the Intra-Option with Color Option approach performs better in terms of success rate than the SMDP approach with intra-option. This means that the Intra-Option with Color Option approach is more likely to successfully pick up and drop off the passenger at the desired locations.
+
+    However, when it comes to test performance, the SMDP approach with Color Option performed better in terms of average successful reward per episode. This means that when the taxi successfully completed a task, it received a higher reward in the SMDP approach with Color Option.
+
+    On the other hand, the Intra-Option with Color Option approach had a higher reward per episode overall, which means that the taxi was able to accumulate more rewards even when it was not successful in completing a task.
+
+    \subsubsection{Comparison between SMDP and IntraOption based on Pick/Drop option}
+    \begin{figure}[H]
+        \centering
+        \centering
+        \includegraphics[width=\textwidth]{./img/comp_pd}
+    \end{figure}
+    The comparison between Intra Option and SMDP with the Pick and Drop option in the taxi environment shows that the Intra Option method has a higher success rate in completing the task of dropping off the passenger at the correct destination compared to SMDP over 100 iterations. On the other hand, SMDP with Pick and Drop has a higher average successful reward per episode during the testing phase compared to Intra Option, also averaged over 100 iterations.
+
+    Additionally, during the training phase, the reward per episode is higher in the Intra Option with Pick and Drop compared to SMDP with Pick and Drop. Therefore it can be concluded that Intra Option with Pick and Drop is more successful in completing the task but SMDP with Pick and Drop is able to achieve a higher average reward per episode during testing.
+
 \end{document}
