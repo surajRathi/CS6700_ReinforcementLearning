@@ -82,9 +82,9 @@
             \end{solution}
             \item (1 mark) Problem 3: Environment is stochastic with high negative reward and low positive reward, like in cliff-walking.
             \begin{solution}
-                \emph{Duelling DQN.} Duelling DQNs separate the calculation of the state-value function and
-                the action selection. The estimate of the value of the state is updated for every action that is taken,
-                i.e. a given state value function is (approximately) updated $|\matcal{A}|$ times faster.
+                \emph{Duelling DQN.} Duelling DQNs separate the calculation of the state-value function and the action selection.
+                The estimate of the value of the state is updated for every action that is taken,
+                i.e.\ a given state value function is (approximately) updated $|\mathcal{A}|$ times faster.
                 This leads to quicker convergence of the state value function despite the sparse rewards.
             \end{solution}
         \end{enumerate}
@@ -202,6 +202,21 @@
         \question[4] We discussed Q-MDPs in the class as a technique for solving the problem of behaving in POMDPs. It was mentioned that the behavior produced by this approximation would not be optimal. In what sense is it not optimal? Are there circumstances under which it can be optimal?
 
         \begin{solution}
+            In POMDP's we do not have a complete picture of the state from the observations.
+            We instead need to estimate the missing features from the observations.
+            This estimation has some uncertainty associated with it (it is a probability distribution over the set $|\mathcal{S}|$).
+
+            For the Q-MDP approximation, we take the expectation of the distribution to get a single state.
+            If this state does not match the true state of the environment, then the generated behavior won't be optimal.
+
+            It is not optimal in the sense that the action selection step does not take into account the uncertainty
+            associated with the state estimation.
+
+            With the following conditions, it can be optimal.
+            \begin{enumerate}
+                \item Fully observable environment
+                \item Completely deterministic environment
+            \end{enumerate}
 
         \end{solution}
 
@@ -213,7 +228,23 @@
 
         \question[4] One of the goals of using options is to be able to cache away policies that caused interesting behaviors. These could be rare state transitions, or access to a new part of the state space, etc. While people have looked at generating options from frequently occurring states in a goal-directed trajectory, such an approach would not work in this case, without a lot of experience. Suggest a method to learn about interesting behaviors in the world while exploring. [\textit{Hint: Think about pseudo rewards.}]
         \begin{solution}
+            If we want to reduce the amount of experience required by the algorithm, we must introduce additional
+            information based on expert experience, intuition, or heuristics. In this case we can introduce that
+            knowledge using pseudo rewards.
 
+            Pseudo rewards allow us to reward the algorithm for reaching certain states. Traditionally it is used to
+            gently guide the algorithm towards the true goal. When carefully set, they can cause much quicker convergence
+            However poorly chosen pseudo rewards can cause suboptimal behavior or even prevent solving of the env.
+
+            In our case we can use pseudo rewards to learn about interesting behaviors in the following way.
+            \begin{enumerate}
+                \item Carefully set pseudo rewards to encourage exploration towards a state or region.
+                \item Identify policies that lead to securing high pseudo rewards.
+                \item Cache away those policy as options for future use.
+            \end{enumerate}
+
+            This method enables us to use external information to influence the learning process and create interesting
+            behaviors for future use without the algorithm collecting a large body of experience.
         \end{solution}
 
     \end{questions}
