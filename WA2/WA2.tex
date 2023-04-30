@@ -68,15 +68,24 @@
         \begin{enumerate}[label=(\alph*)]
             \item (1 mark) Problem 1: In most states of the environment, choice of action doesn’t matter.
             \begin{solution}
+                \emph{Expected SARSA.} This method differs from traditional sarsa or q-learning in the way it estimates the state-value of the next state.
+                It defines the value as $V(s') = \sum_{a'\in\mathcal{A_{s'}}}\pi(s', a) * q(s', a')$.
+                In SARSA we sample the policy and in qlearning we choose the action that maximizes this value.
+                Expected sarsa is better for this case as it takes into account all actions regardless of the best current action and we do not easily get fixated on a single action.
 
             \end{solution}
             \item (1 mark) Problem 2: Agent seems to be consistently picking sub-optimal actions during exploitation.
             \begin{solution}
-
+                \emph{Double DQN.} This method separates action selection and value function updates.
+                This can help prevent the agent from falling into suboptimal local maxima and reduce the selection of
+                suboptimal actions.
             \end{solution}
             \item (1 mark) Problem 3: Environment is stochastic with high negative reward and low positive reward, like in cliff-walking.
             \begin{solution}
-
+                \emph{Duelling DQN.} Duelling DQNs separate the calculation of the state-value function and
+                the action selection. The estimate of the value of the state is updated for every action that is taken,
+                i.e. a given state value function is (approximately) updated $|\matcal{A}|$ times faster.
+                This leads to quicker convergence of the state value function despite the sparse rewards.
             \end{solution}
         \end{enumerate}
 
@@ -84,6 +93,32 @@
         \question[4] Ego-centric representations are based on an agent’s current position in the world. In a sense the agent says, I don’t care where I am, but I am only worried about the position of the objects in the world relative to me. You could think of the agent as being at the origin always. Comment on the suitability (advantages and disadvantages) of using an ego-centric representation in RL.
 
         \begin{solution}
+
+            \emph{Advantages:}
+            \begin{itemize}
+                \item Generalization: When we use an egocentric representation, the actor learns the best action for a given immediate situation,
+                not the best action for a given position in a given environment. This allows an actor to quickly adapt to new starting locations, new environments,
+                or even dynamic environments.
+                \item Simplicity: Especially in very large environments, an egocentric representation often requires a much lower set of states.
+                With such a representation we (1) generally look at only spatially nearby features and (2) encode just the position deltas.
+                This requires a much smaller state space.
+            \end{itemize}
+
+            \emph{Disadvantages:}
+            \begin{itemize}
+                \item Limited Horizon: Ego-centric representations generally only include features in spatial vicinity of the ego.
+                This can reduce the amount of information available to the algorithm. In some cases this may help reduce
+                the computational effort and may be apt for the environment, but in general, we may miss key information
+                about the environment.
+                \item Difficulty for long term planning: In many environments, and especially those with very sparse rewards,
+                the global structure of the environment plays a very significant role. The value function is quite smooth over the state space,
+                and is maximum at the states closest to the state with the reward. The intermediate states would
+                generally show a smooth gradient.
+
+                In the egocentric case, these intermediate states may all be collapsed into a single state, and the ego
+                would not know how to traverse the environment to reach the rewarding states. It may just get 'lost' there.
+                In some simpler environments it may be able to solve with simple heuristics but that will not always work.
+            \end{itemize}
 
 
         \end{solution}
@@ -102,6 +137,10 @@
         \begin{enumerate}[label=(\alph*)]
             \item (4 marks) Write the full equation to calculate the value for a given child (i.e., $f(s, \vec{\theta})=$ $\ldots)$, where $s$ is a child's name and $\vec{\theta}$ is a weight vector $\vec{\theta}=(\theta(1), \theta(2), \ldots, \theta(5))^{\mathrm{T}}$. Assume child $s$ is described by the features given above, and that the feature values are respectively written as $\phi_{s}^{\text {girl }}, \phi_{s}^{\text {age }}, \phi_{s}^{\text {last }}, \phi_{s}^{\text {good }}$, and $\phi_{s}^{\text {bad }}$.
             \begin{solution}
+                \[
+                    f(s, \vec{\theta}) = \vec{\theta}^{\mathrm{T}}
+                    [\phi_{s}^{\text {girl }}, \phi_{s}^{\text {age }}, \phi_{s}^{\text {last }}, \phi_{s}^{\text {good }}, \phi_{s}^{\text {bad }}]^{\mathrm{T}}
+                \]
 
             \end{solution}
 
@@ -111,18 +150,52 @@
             \]
             based on your answer to the previous question.
             \begin{solution}
-
+                \[
+                    [\phi_{s}^{\text {girl }}, \phi_{s}^{\text {age }}, \phi_{s}^{\text {last }}, \phi_{s}^{\text {good }}, \phi_{s}^{\text {bad }}]^{\mathrm{T}}
+                \]
             \end{solution}
             \item (4 marks) Using the feature names given above, describe in words something about a function that would make it impossible to represent it adequately using the above linear function approximator. Can you define a new feature in terms of the original ones that would make it linearly representable?
             \begin{solution}
+                Let us assume that a child who was good in the previous year has to do fewer good deeds this year to remain good.
+                i.e., if a child was bad in the previous year, he needs to have more net good deeds in the current year to be good.
 
+                The current approximator cannot represent this relation. We can define a new feature as follows:
+                \[
+                    \phi_{s}^{\text{weighted\_deeds}} = (1 + \phi_s^{\text{last}}) * (\phi_s^\text{good} - \phi_s^\text{bad})
+                \]
+
+                By providing this feature as an input to the linear function approimator, we can learn a more accurate value function.
             \end{solution}
         \end{enumerate}
 
 
         \question[5] We typically assume tabula rasa learning in RL and that beyond the states and actions, you have no knowledge about the dynamics of the system. What if you had a partially specified approximate model of the world - one that tells you about the effects of the actions from certain states, i.e., the possible next states, but not the exact probabilities. Nor is the model specified for all states. How will you modify Q learning or SARSA to make effective use of the model? Specifically describe how you can reduce the number of \textit{real} samples drawn from the \textit{world}.
         \begin{solution}
+            \begin{itemize}
+                \item The model gives us information on the states where it exists. The world
+                can give us information on all states. We can combine the two to obtain a more complete model of our
+                environment with fewer real world samples. The role of real world trajectories should be only to
+                improve our understanding of the states which are not modelled
+                \item The method followed has two parts:
+                \begin{enumerate}
+                    \item \emph{Sampling State Transitions} (simulated experiences): Between each real world trajectory, we choose a set of random
+                    states for which the model exists (modelled states). From there we simulate $n$ actions and use
+                    the to simulate a single time step. We can then use the qlearning or sarsa update equation to
+                    update our value function.
+                    \item \emph{Smarter Exploration} : The primary advantage of the real world trajectories is to
+                    better understand the states which we cannot model; hence, when we can replace epsilon-greedy with
+                    the following formulation.
+                    With the parameters $\beta$ and $\epsilon$ .
+                    \begin{itemize}
+                        \item With probability $(1-\beta - \epsilon)$, we choose the action which maximizes the expected value at the next timestep
+                        \item With probability $\beta$, we randomly choose an action from the set of actions which may result in us transferring to a state which is not modelled.
+                        \item With probability $\epsilon$, we randomly choose an action from the set of all actions.
+                    \end{itemize}
+                \end{enumerate}
 
+                \item This above formulation allows us to reduce the number of real samples by exploring modelled state transitions using the model,
+                and optimizing the real samples to spend more time exploring the un-modelled states that can only be explored by real samples.
+            \end{itemize}
 
         \end{solution}
 
