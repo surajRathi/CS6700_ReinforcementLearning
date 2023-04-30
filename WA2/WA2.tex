@@ -222,7 +222,12 @@
 
         \question[3] This question requires you to do some additional reading. Dietterich specifies certain conditions for safe-state abstraction for the MaxQ framework. I had mentioned in class that even if we do not use the MaxQ value function decomposition, the hierarchy provided is still useful. So, which of the safe-state abstraction conditions are still necessary when we do not use value function decomposition.
         \begin{solution}
-
+            The strength of the method relies on how we can scale down the state space using subtasks.
+            Hence we must keep the conditions that ensure well-defined subtasks, namely:
+            \begin{enumerate}
+                \item Condition 1: Subtask Irrelevance: Some state variables are irrelevant to a subtask
+                \item Condition 5: Shielding
+            \end{enumerate}
 
         \end{solution}
 
